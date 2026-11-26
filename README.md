@@ -1,112 +1,120 @@
-# 🖼️ ImgHost — External Image Hoster for phpBB 3.3
+# ImgHost — Direct Image Hosting Integration for phpBB 3.3
 
-A lightweight phpBB 3.3 extension (`kuskow/imghost`) that compresses images directly in the user's browser and uploads them straight to an external image host (or a separate directory on the same server) without loading the main forum server.
-
----
-
-## Features
-
-- **Client-Side Compression**: Automatically resizes images (default max `1024×1024` px) and converts them to JPEG via HTML5 `<canvas>`, stripping all EXIF metadata before upload.
-- **Zero Traffic Load on Forum**: Browser uploads compressed files directly to the external receiver (`imghost_receiver.php`) in a single request.
-- **Clipboard Paste Support**: Upload images instantly by pasting them (`Ctrl+V`) into the reply box, or via the toolbar upload button.
-- **Post & Daily Quotas**: Configurable limit of images per post (default `5` — automatically appends a friendly notice in the message text when reached) and daily upload limit per user (default `500`).
-- **One-Click TOFU Pairing & HMAC Security**: Automatically generates a 256-bit secret key upon installation, pairs once with `imghost_receiver.php` (`imghost_config.php`), and signs every page ticket with `HMAC-SHA256`.
-- **Strict Server Firewall**: Receiver validates file size, pixel dimensions, true JPEG format, absence of EXIF headers (`0xFFE1`), and user daily quota, silently rejecting invalid requests (`HTTP 403`).
+[English](#english) | [Русский](#русский)
 
 ---
 
-## Installation
+## English
 
-### 1. Install the phpBB Extension
-1. Download `kuskow_imghost_1.0.0.zip`.
-2. Extract the `kuskow` folder into your forum's `ext/` directory (`ext/kuskow/imghost/composer.json`).
-3. Go to **ACP → Customise → Manage extensions**, find **🖼️ ImgHost**, and click **Enable**.
+**ImgHost** is a lightweight, zero-overhead phpBB 3.3 extension that lets registered users upload images directly from their browser to a separate external image host (such as an inexpensive shared hosting account with ample disk space), automatically resizing photos on the client side and inserting `[img]...[/img]` BBCode tags into the post editor.
 
-### 2. Deploy the Image Receiver
-1. Copy `ext/kuskow/imghost/receiver/imghost_receiver.php` to your external image hosting server (or into a subfolder on your main domain, e.g. `/img/imghost_receiver.php`).
-2. Make sure the directory is writable by PHP so `imghost_receiver.php` can create `imghost_config.php` and monthly subdirectories (`YYYYMM/`).
+### Key Features
+* **Zero Load on the Main Forum Server:** Images are compressed in the user's browser via HTML5 `<canvas>` and uploaded directly to the external receiver script without passing through the phpBB server.
+* **Automatic Client-Side Resizing & EXIF Stripping:** Photos are scaled down to the configured maximum dimension (e.g., `1024 px`), converted to JPEG, and stripped of all EXIF metadata before upload.
+* **Clipboard Paste Support (`Ctrl+V`):** Users can paste screenshots or copied images directly into the message textarea for instant upload.
+* **Universal Editor Detection:** Automatically adds the upload button next to the standard `[img]` BBCode button wherever BBCode images are enabled (`S_BBCODE_IMG`), including quick reply, full post editor, and private messages / Messenger extensions.
+* **One-Click TOFU Pairing & Lock:** Enter the receiver URL and limits in the phpBB ACP and click **Submit**. The extension pairs with the remote host over HTTPS, writes `imghost_config.php` on the image host, and locks the ACP fields into a read-only status screen to prevent accidental overwrites.
+* **Multi-Layer Security:**
+  * Time-limited HMAC-SHA256 upload tickets generated per user session (`user_id` + expiration timestamp + signature).
+  * Per-user daily upload quota enforced on the receiver side.
+  * Strict server-side validation of file size, pixel dimensions, valid JPEG format, and absence of EXIF markers (`0xFFE1`), silently rejecting invalid requests with `HTTP 403`.
 
-### 3. Pair Forum and Receiver
-1. Go to **ACP → Extensions → ImgHost → Settings**.
-2. Verify or enter the full URL to `imghost_receiver.php` and adjust limits if needed.
-3. Click **Submit**. The extension will automatically pair with the receiver and create `imghost_config.php`.
-   - *Note:* Once paired, settings are locked in `imghost_config.php` against overwrites. To change settings later, delete `imghost_config.php` on the image host and refresh the ACP settings page.
+### Requirements
+* phpBB `3.3.0` or higher
+* PHP `7.4` or higher (with `curl` and `json` extensions enabled)
+* A separate hosting account or subdomain (e.g., `https://img.example.com/`) with PHP `7.4+` and `GD` extension enabled
 
----
+### Installation
 
-## Release Description (for GitHub Releases)
+#### 1. Install the phpBB Extension
+1. Download the release archive `kuskow_imghost_1.0.0.zip` and extract the `kuskow/` folder into your forum's `ext/` directory so the path is `ext/kuskow/imghost/`.
+2. Go to **ACP → Customise → Manage extensions**.
+3. Find **🖼️ ImgHost** in the disabled extensions list and click **Enable**.
 
-### ImgHost 1.0.0 — Initial Release
+#### 2. Deploy the Receiver Script on the Image Host
+1. Copy `ext/kuskow/imghost/receiver/imghost_receiver.php` to the root directory (or a subdirectory) of your external image host (for example, `https://img.example.com/imghost_receiver.php`).
+2. Ensure PHP has write permissions in that directory so it can create `imghost_config.php` and monthly image folders (`YYYYMM/`).
 
-A lightweight phpBB 3.3 extension (`kuskow/imghost`) for client-side image compression and direct uploading to an external image host without overloading the forum server.
+#### 3. Pair Forum & Image Host
+1. In phpBB, open **ACP → Extensions → ImgHost → Settings**.
+2. Verify or enter the **Receiver URL** (pre-filled automatically as `https://img.<your-domain>/imghost_receiver.php`), **Daily upload limit per user**, **Maximum image dimension (px)**, and **Maximum file size (KB)**.
+3. Click **Submit**. Once paired, `imghost_config.php` is created on the image host and the ACP settings screen switches to locked informational mode.
+4. *(Optional)* To change settings later, delete `imghost_config.php` from the image host via FTP/File Manager and refresh the ImgHost ACP page.
 
-#### What's Included
-- Client-side resizing, JPEG conversion, and EXIF removal via `<canvas>`.
-- Toolbar upload button and clipboard paste (`Ctrl+V`) support in `viewtopic`.
-- Per-post image limit (with automatic in-post notice) and per-user daily upload quota.
-- Automatic TOFU pairing (`imghost_config.php`) and `HMAC-SHA256` ticket verification.
-- Standalone `imghost_receiver.php` included in `kuskow/imghost/receiver/`.
-
-#### Quick Install
-1. Download `kuskow_imghost_1.0.0.zip`.
-2. Upload the `kuskow` folder to `ext/` (`ext/kuskow/imghost/composer.json`).
-3. Enable **🖼️ ImgHost** in **ACP → Customise → Manage extensions**.
-4. Upload `ext/kuskow/imghost/receiver/imghost_receiver.php` to your image host and click **Submit** in **ACP → Extensions → ImgHost**.
-
----
----
-
-# 🖼️ ImgHost — Внешний фотохостинг для phpBB 3.3
-
-Лёгкое расширение для phpBB 3.3 (`kuskow/imghost`), которое сжимает изображения прямо в браузере пользователя и загружает их напрямую на внешний фотохостинг (или в отдельную папку основного сервера) без нагрузки на трафик и процессор форума.
+### License
+[GNU General Public License v2.0](https://opensource.org/licenses/GPL-2.0)
 
 ---
 
-## Возможности
+## Русский
 
-- **Сжатие на стороне клиента**: автоматическое уменьшение габаритов (по умолчанию до `1024×1024` px) и конвертация в JPEG через HTML5 `<canvas>` с удалением всех EXIF-метаданных до отправки.
-- **Нулевая нагрузка на трафик форума**: браузер отправляет сжатые файлы напрямую на приёмник (`imghost_receiver.php`) одним запросом.
-- **Вставка из буфера обмена**: загрузка картинок по `Ctrl+V` прямо в поле ответа или через кнопку на панели BB-кодов.
-- **Лимиты на сообщение и сутки**: настраиваемый лимит фото в одном сообщении (по умолчанию `5` — при достижении автоматически добавляет в текст поста уведомление о продолжении в следующем сообщении) и суточная квота на пользователя (по умолчанию `500` фото).
-- **Автопривязка в один клик и защита HMAC**: автоматическая генерация 256-битного секретного ключа при установке, однократная привязка к приёмнику (`imghost_config.php`) и криптографическая подпись билетов `HMAC-SHA256`.
-- **Жёсткий файрвол приёмника**: проверка веса файла, габаритов в пикселях, реального формата JPEG, отсутствия EXIF-заголовков (`0xFFE1`) и суточного лимита пользователя с молчаливым сбросом (`HTTP 403`) при любых нарушениях.
+**ImgHost** — лёгкое расширение для phpBB 3.3, которое позволяет зарегистрированным пользователям загружать фотографии напрямую из браузера на отдельный внешний фотохостинг (например, на недорогой виртуальный хостинг с большим диском), автоматически сжимая изображения на стороне клиента и вставляя BB-коды `[img]...[/img]` в текст сообщения.
+
+### Основные возможности
+* **Нулевая нагрузка на основной сервер форума:** фотографии сжимаются в браузере пользователя через HTML5 `<canvas>` и отправляются напрямую на внешний скрипт-приёмник, минуя сервер phpBB.
+* **Сжатие и очистка EXIF на стороне клиента:** изображения автоматически уменьшаются до заданного максимального размера (например, `1024 px`), перекодируются в JPEG и очищаются от всех EXIF-метаданных ещё до отправки.
+* **Вставка из буфера обмена (`Ctrl+V`):** скриншоты и скопированные изображения можно вставлять прямо в поле ввода текста.
+* **Универсальная работа во всех редакторах:** кнопка загрузки автоматически появляется рядом со штатной кнопкой `[img]` везде, где разрешена вставка изображений (`S_BBCODE_IMG`) — в быстром ответе, полном редакторе сообщений и личных сообщениях (включая расширение `Messenger`).
+* **Безопасная однократная привязка (TOFU):** достаточно указать URL приёмника и лимиты в АСР phpBB и нажать **«Отправить»**. Расширение свяжется с приёмником, создаст на фотохостинге файл `imghost_config.php` и переведёт экран настроек в информационный режим с заблокированными полями.
+* **Многоуровневая защита:**
+  * Подписанные одноразовые билеты HMAC-SHA256 с привязкой к `user_id` и сроком действия.
+  * Суточная квота загрузок на каждого пользователя на стороне приёмника.
+  * Жёсткая проверка веса файла, габаритов в пикселях, формата JPEG и отсутствия EXIF-маркеров (`0xFFE1`) с тихим сбросом невалидных запросов (`HTTP 403`).
+
+### Требования
+* phpBB `3.3.0` или выше
+* PHP `7.4` или выше (с поддержкой `curl` и `json`)
+* Отдельный виртуальный хостинг или поддомен (например, `https://img.example.com/`) с PHP `7.4+` и библиотекой `GD`
+
+### Установка
+
+#### 1. Установка расширения на форум phpBB
+1. Скачайте релизный архив `kuskow_imghost_1.0.0.zip` и распакуйте папку `kuskow/` в директорию `ext/` вашего форума (должен получиться путь `ext/kuskow/imghost/`).
+2. Перейдите в **АСР → Персонализация → Управление расширениями**.
+3. Найдите **🖼️ ImgHost** в списке отключённых расширений и нажмите **Включить**.
+
+#### 2. Размещение скрипта-приёмника на фотохостинге
+1. Скопируйте файл `ext/kuskow/imghost/receiver/imghost_receiver.php` в корневую папку (или подпапку) вашего внешнего фотохостинга (например, `https://img.example.com/imghost_receiver.php`).
+2. Убедитесь, что у PHP есть права на запись в эту директорию для создания файла `imghost_config.php` и папок по месяцам (`YYYYMM/`).
+
+#### 3. Привязка форума и фотохостинга
+1. В админке форума откройте **АСР → Расширения → ImgHost → Настройки**.
+2. Проверьте или укажите **URL приёмника** (подставляется автоматически в виде `https://img.<ваш-домен>/imghost_receiver.php`), **Суточный лимит на пользователя**, **Максимальный размер стороны (px)** и **Максимальный размер файла (КБ)**.
+3. Нажмите **Отправить**. На фотохостинге создастся файл `imghost_config.php`, а экран настроек в АСР перейдёт в защищённый информационный режим.
+4. *(При необходимости)* Чтобы изменить параметры позже, удалите файл `imghost_config.php` на сервере фотохостинга и обновите страницу настроек ImgHost в АСР.
 
 ---
 
-## Установка
+### GitHub Release Description (`ImgHost 1.0.0`)
 
-### 1. Установка расширения в phpBB
-1. Скачайте архив `kuskow_imghost_1.0.0.zip`.
-2. Загрузите папку `kuskow` в директорию `ext/` вашего форума (`ext/kuskow/imghost/composer.json`).
-3. Перейдите в **АСР → Персонализация → Управление расширениями**, найдите **🖼️ ImgHost** и нажмите **Включить**.
+```markdown
+## ImgHost 1.0.0 — Initial Release
 
-### 2. Размещение приёмника изображений
-1. Скопируйте файл `ext/kuskow/imghost/receiver/imghost_receiver.php` на внешний фотохостинг (или в отдельную папку на основном домене, например `/img/imghost_receiver.php`).
-2. Убедитесь, что папка доступна PHP на запись для создания `imghost_config.php` и ежемесячных подпапок (`ГГГГММ/`).
+**ImgHost** is a phpBB 3.3 extension for direct client-side image resizing and uploading to a separate external image host without loading the main forum server.
 
-### 3. Привязка форума и приёмника
-1. Перейдите в **АСР → Расширения → ImgHost → Настройки**.
-2. Проверьте или укажите полный URL к `imghost_receiver.php` и при необходимости скорректируйте лимиты.
-3. Нажмите **Отправить**. Расширение автоматически выполнит привязку и создаст файл `imghost_config.php` на сервере хостинга.
-   - *Примечание:* После привязки настройки в `imghost_config.php` защищены от перезаписи. Чтобы изменить параметры позже, удалите файл `imghost_config.php` на фотохостинге и обновите страницу настроек в АСР.
+### Highlights
+- Client-side `<canvas>` resizing, JPEG conversion, and automatic EXIF removal.
+- Direct browser-to-image-host upload with `Ctrl+V` clipboard paste support.
+- Works anywhere BBCode images are enabled (`S_BBCODE_IMG`), including quick reply, full post editor, and PMs.
+- One-click TOFU pairing with read-only ACP lock (`imghost_config.php`).
+- HMAC-SHA256 signed upload tickets, per-user daily quotas, and strict server-side image validation.
+
+### Installation
+Extract the `kuskow/` directory into your forum's `ext/` folder, enable **🖼️ ImgHost** in the ACP, upload `ext/kuskow/imghost/receiver/imghost_receiver.php` to your image host, and pair them in **ACP → Extensions → ImgHost → Settings**.
 
 ---
 
-## Описание для страницы релиза на GitHub (Releases)
+## ImgHost 1.0.0 — Первый релиз
 
-### ImgHost 1.0.0 — Первый релиз
+**ImgHost** — расширение для phpBB 3.3 для сжатия фотографий в браузере и их прямой загрузки на отдельный внешний фотохостинг без нагрузки на сервер форума.
 
-Лёгкое расширение для phpBB 3.3 (`kuskow/imghost`) для сжатия изображений на стороне клиента и прямой загрузки на внешний фотохостинг без нагрузки на сервер форума.
+### Что реализовано
+- Сжатие изображений на стороне клиента через `<canvas>`, конвертация в JPEG и автоматическое удаление EXIF-метаданных.
+- Прямая загрузка на внешний фотохостинг, включая вставку картинок из буфера обмена (`Ctrl+V`).
+- Универсальная работа везде, где разрешены BB-коды изображений (`S_BBCODE_IMG`): в быстром ответе, полном редакторе и личных сообщениях (включая `Messenger`).
+- Однократная привязка к приёмнику в один клик с защитой от перезаписи (`imghost_config.php`) и информационным экраном в АСР.
+- Подпись запросов через HMAC-SHA256, суточные квоты на каждого пользователя и строгая валидация изображений на стороне приёмника.
 
-#### Что входит в релиз
-- Сжатие, конвертация в JPEG и очистка EXIF через `<canvas>` в браузере.
-- Кнопка загрузки на панели инструментов и вставка из буфера обмена (`Ctrl+V`) при просмотре тем (`viewtopic`).
-- Лимит фото на одно сообщение (с автоматической вставкой подсказки в текст) и суточный лимит на пользователя.
-- Автоматическая привязка (`imghost_config.php`) и проверка билетов по `HMAC-SHA256`.
-- Скрипт приёмника `imghost_receiver.php` в комплекте (`kuskow/imghost/receiver/`).
-
-#### Быстрая установка
-1. Скачайте архив `kuskow_imghost_1.0.0.zip`.
-2. Загрузите папку `kuskow` в директорию `ext/` (`ext/kuskow/imghost/composer.json`).
-3. Включите **🖼️ ImgHost** в **АСР → Персонализация → Управление расширениями**.
-4. Загрузите `ext/kuskow/imghost/receiver/imghost_receiver.php` на фотохостинг и нажмите **Отправить** в **АСР → Расширения → ImgHost**.
+### Установка
+Распакуйте папку `kuskow/` в директорию `ext/` форума, включите **🖼️ ImgHost** в АСР, загрузите `ext/kuskow/imghost/receiver/imghost_receiver.php` на фотохостинг и выполните привязку в **АСР → Расширения → ImgHost → Настройки**.
+```
