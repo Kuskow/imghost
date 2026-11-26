@@ -1,0 +1,10 @@
+{% if S_BBCODE_IMG and S_IMGHOST_ENABLED %}
+<div id="kuskow-imghost-cfg" hidden
+     data-url="{{ IMGHOST_RECEIVER }}"
+     data-ticket="{{ IMGHOST_TICKET }}"
+     data-max-dim="{{ IMGHOST_MAX_DIM }}"
+     data-btn-title="{{ L_IMGHOST_BTN_TITLE }}">
+</div>
+{% INCLUDEJS '@kuskow_imghost/imghost.js' %}
+{% endif %}
+

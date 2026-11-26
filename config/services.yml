@@ -1,0 +1,10 @@
+services:
+    kuskow.imghost.listener:
+        class: kuskow\imghost\event\main_listener
+        arguments:
+            - '@config'
+            - '@template'
+            - '@user'
+            - '@language'
+        tags:
+            - { name: event.listener }

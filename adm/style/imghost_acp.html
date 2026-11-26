@@ -1,0 +1,53 @@
+<!-- INCLUDE overall_header.html -->
+
+<h1>{{ lang('ACP_IMGHOST_TITLE') }}</h1>
+<p>{{ lang('ACP_IMGHOST_EXPLAIN') }}</p>
+
+<!-- IF S_ERROR -->
+<div class="errorbox">
+    <h3>{{ lang('WARNING') }}</h3>
+    <p>{{ ERROR_MSG }}</p>
+</div>
+<!-- ENDIF -->
+
+<!-- IF S_IMGHOST_PAIRED -->
+<div class="successbox">
+    <h3>{{ lang('ACP_IMGHOST_LOCKED_TITLE') }}</h3>
+    <p>{{ lang('ACP_IMGHOST_LOCKED_EXPLAIN') }}</p>
+</div>
+<!-- ENDIF -->
+
+<form id="kuskow_imghost_acp" method="post" action="{{ U_ACTION }}">
+    <fieldset>
+        <legend>{{ lang('ACP_IMGHOST_SETTINGS') }}</legend>
+
+        <dl>
+            <dt><label for="kuskow_imghost_url">{{ lang('ACP_IMGHOST_URL') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_IMGHOST_URL_EXPLAIN') }}</span></dt>
+            <dd><input id="kuskow_imghost_url" type="url" name="kuskow_imghost_url" value="{{ KUSKOW_IMGHOST_URL }}" size="55" placeholder="https://img.example.com/imghost_receiver.php" <!-- IF S_IMGHOST_PAIRED -->readonly="readonly" style="background-color:#eee;color:#555;"<!-- ENDIF --> /></dd>
+        </dl>
+
+        <dl>
+            <dt><label for="kuskow_imghost_max_daily">{{ lang('ACP_IMGHOST_MAX_DAILY') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_IMGHOST_MAX_DAILY_EXPLAIN') }}</span></dt>
+            <dd><input id="kuskow_imghost_max_daily" type="number" name="kuskow_imghost_max_daily" value="{{ KUSKOW_IMGHOST_MAX_DAILY }}" min="1" max="10000" <!-- IF S_IMGHOST_PAIRED -->readonly="readonly" style="background-color:#eee;color:#555;"<!-- ENDIF --> /></dd>
+        </dl>
+
+        <dl>
+            <dt><label for="kuskow_imghost_max_dim">{{ lang('ACP_IMGHOST_MAX_DIM') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_IMGHOST_MAX_DIM_EXPLAIN') }}</span></dt>
+            <dd><input id="kuskow_imghost_max_dim" type="number" name="kuskow_imghost_max_dim" value="{{ KUSKOW_IMGHOST_MAX_DIM }}" min="256" max="4096" <!-- IF S_IMGHOST_PAIRED -->readonly="readonly" style="background-color:#eee;color:#555;"<!-- ENDIF --> /></dd>
+        </dl>
+
+        <dl>
+            <dt><label for="kuskow_imghost_max_kb">{{ lang('ACP_IMGHOST_MAX_KB') }}{{ lang('COLON') }}</label><br /><span>{{ lang('ACP_IMGHOST_MAX_KB_EXPLAIN') }}</span></dt>
+            <dd><input id="kuskow_imghost_max_kb" type="number" name="kuskow_imghost_max_kb" value="{{ KUSKOW_IMGHOST_MAX_KB }}" min="100" max="10240" <!-- IF S_IMGHOST_PAIRED -->readonly="readonly" style="background-color:#eee;color:#555;"<!-- ENDIF --> /></dd>
+        </dl>
+    </fieldset>
+
+    {% if not S_IMGHOST_PAIRED %}
+      <fieldset class="submit-buttons">
+        <input class="button1" type="submit" id="submit" name="submit" value="{{ lang('SUBMIT') }}" />
+        {{ S_FORM_TOKEN }}
+      </fieldset>
+    {% endif %}
+</form>
+
+<!-- INCLUDE overall_footer.html -->
