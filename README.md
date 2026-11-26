@@ -8,7 +8,7 @@ A lightweight phpBB 3.3 extension (`kuskow/imghost`) that compresses images dire
 
 - **Zero image traffic on forum server:** Images are resized and compressed in the browser and sent directly to the external receiver.
 - **Trust-On-First-Use (TOFU) Auto-Pairing:** Generates a 256-bit secret key upon extension installation and automatically writes configuration to `.imghost_config.php` on the receiver when saved in ACP.
-- **Tamper-Proof Lock:** Once `.imghost_config.php` is created on the external server, settings cannot be overwritten remotely until the file is manually deleted from the receiver.
+- **Tamper-Proof Lock:** Once `imghost_config.php` is created on the external server, settings cannot be overwritten remotely until the file is manually deleted from the receiver.
 - **Strict Server Firewall:** The receiver silently rejects (`HTTP 403`, empty body) any batch that exceeds pixel dimensions, file size, is not a valid JPEG, or still contains EXIF metadata (`0xFFE1`).
 - **Per-Post & Daily Quotas:** Limits images per message (default: `5`) with an automatic in-post notice (*"More photos can be inserted in the next message"*), plus a daily per-user quota (default: `500`).
 - **Clipboard Paste Support:** Paste screenshots or copied images directly into the message editor (`Ctrl+V`).
@@ -19,7 +19,7 @@ A lightweight phpBB 3.3 extension (`kuskow/imghost`) that compresses images dire
 
 ### Step 1: External Image Hoster Setup
 1. Upload `receiver/imghost_receiver.php` and `receiver/.htaccess` to your image hoster directory (e.g., `https://img.example.com/`).
-2. Ensure PHP has write permissions to that directory so it can create `.imghost_config.php` and monthly `YYYYMM/` folders.
+2. Ensure PHP has write permissions to that directory so it can create `imghost_config.php` and monthly `YYYYMM/` folders.
 3. Edit `receiver/.htaccess` and replace `example\.com` with your actual forum domain to block third-party hotlinking.
 
 ### Step 2: phpBB Extension Setup
@@ -35,7 +35,7 @@ A lightweight phpBB 3.3 extension (`kuskow/imghost`) that compresses images dire
 
 ### Шаг 1: Настройка стороннего фотохостинга
 1. Загрузите файлы `receiver/imghost_receiver.php` и `receiver/.htaccess` на сервер фотохостинга (например, `https://img.example.com/`).
-2. Убедитесь, что у PHP есть права на запись в эту директорию (для создания `.imghost_config.php` и папок вида `ГГГГММ`).
+2. Убедитесь, что у PHP есть права на запись в эту директорию (для создания `imghost_config.php` и папок вида `ГГГГММ`).
 3. Откройте `receiver/.htaccess` и замените `example\.com` на домен вашего форума для защиты от вставки картинок на чужие сайты.
 
 ### Шаг 2: Установка расширения в phpBB 3.3
@@ -43,4 +43,4 @@ A lightweight phpBB 3.3 extension (`kuskow/imghost`) that compresses images dire
 2. В Администраторском разделе перейдите в **Персонализация → Управление расширениями** и включите **ImgHost**.
 3. Перейдите в **Расширения → ImgHost → Настройки фотохостинга**.
 4. Укажите полный HTTPS-адрес файла `imghost_receiver.php`, задайте лимиты и нажмите **Отправить**.
-5. Форум автоматически привяжется к приёмнику, запишет `.imghost_config.php` и зафиксирует настройки.
+5. Форум автоматически привяжется к приёмнику, запишет `imghost_config.php` и зафиксирует настройки.
