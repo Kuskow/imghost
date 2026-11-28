@@ -1,6 +1,6 @@
 /**
- * ImgHost Client Script v1.0.0 by Kuskow
- * Compresses images via Canvas (strips EXIF) and uploads directly to external receiver.
+ * ImgHost Client Script v1.0.1 by Kuskow
+ * Compresses images via Canvas (sRGB, strips EXIF) with fallback to server-side processing.
  */
 (function() {
     'use strict';
@@ -15,10 +15,10 @@
         btnTitle: cfgEl.dataset.btnTitle || ''
     };
     if (!cfg.receiverUrl || !cfg.ticket) return;
-    
+
     let globalFileInput = null;
     const ORIGINAL_ICON = '<i class="icon fa-cloud-upload fa-fw" aria-hidden="true"></i>';
-    const QUALITY = 0.83;
+    const QUALITY = 0.90;
 
     function getOrCreateFileInput() {
         if (globalFileInput) return globalFileInput;
@@ -39,22 +39,39 @@
         const textBefore = textarea.value.substring(0, startPos);
         const textAfter = textarea.value.substring(endPos, textarea.value.length);
 
+        textarea.value = textBefore + textAfter;
         textarea.value = textBefore + textToInsert + textAfter;
         textarea.focus();
         textarea.selectionStart = textarea.selectionEnd = startPos + textToInsert.length;
     }
 
-    function compressImageClientSide(file) {
+    function loadImageSource(file) {
+        if ('createImageBitmap' in window) {
+            return createImageBitmap(file).then(bitmap => ({
+                source: bitmap,
+                width: bitmap.width,
+                height: bitmap.height,
+                cleanup: () => { if (bitmap.close) bitmap.close(); }
+            }));
+        }
         return new Promise((resolve, reject) => {
             const objectUrl = URL.createObjectURL(file);
             const img = new Image();
-
-            img.onload = function() {
+            img.onload = () => {
                 URL.revokeObjectURL(objectUrl);
+                resolve({ source: img, width: img.width, height: img.height, cleanup: () => {} });
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('Image load failed'));
+            };
+            img.src = objectUrl;
+        });
+    }
 
-                let width = img.width;
-                let height = img.height;
-
+    function prepareFileForUpload(file) {
+        return loadImageSource(file)
+            .then(({ source, width, height, cleanup }) => new Promise((resolve, reject) => {
                 const ratio = Math.min(cfg.maxDim / width, cfg.maxDim / height);
                 if (ratio < 1) {
                     width = Math.round(width * ratio);
@@ -64,13 +81,14 @@
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
-                const ctx = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d', { colorSpace: 'srgb', alpha: false }) || canvas.getContext('2d');
 
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
+                ctx.drawImage(source, 0, 0, width, height);
+                cleanup();
 
-                canvas.toBlob(function(blob) {
+                canvas.toBlob(blob => {
                     if (!blob) {
                         reject(new Error('Canvas toBlob failed'));
                         return;
@@ -78,62 +96,55 @@
                     const origName = file.name || 'pasted_image.png';
                     const lastDot = origName.lastIndexOf('.');
                     const baseName = lastDot !== -1 ? origName.substring(0, lastDot) : origName;
-                    const newFileName = baseName + '.jpg';
 
-                    resolve(new File([blob], newFileName, {
+                    resolve(new File([blob], baseName + '.jpg', {
                         type: 'image/jpeg',
                         lastModified: Date.now()
                     }));
                 }, 'image/jpeg', QUALITY);
-            };
-
-            img.onerror = function() {
-                URL.revokeObjectURL(objectUrl);
-                reject(new Error('Image load failed'));
-            };
-
-            img.src = objectUrl;
-        });
+            }))
+            // If browser Canvas fails (e.g. HEIC or huge 48MP iPhone photo), pass raw file to server for resize
+            .catch(() => (file.size > 0 && file.size <= 26214400 ? file : null));
     }
 
     function uploadAndInsertImages(files, textarea) {
         if (!files || files.length === 0) return;
-    
-        const compressionPromises = Array.from(files).map(file => compressImageClientSide(file));
-    
-        Promise.all(compressionPromises)
-            .then(compressedFiles => {
+
+        Promise.all(Array.from(files).map(file => prepareFileForUpload(file)))
+            .then(preparedFiles => {
+                const validFiles = preparedFiles.filter(Boolean);
+                if (validFiles.length === 0) return null;
+
                 const formData = new FormData();
                 formData.append('ticket', cfg.ticket);
-                compressedFiles.forEach(file => {
-                    formData.append('images[]', file);
-                });
-    
+                validFiles.forEach(file => formData.append('images[]', file));
+
                 return fetch(cfg.receiverUrl, {
                     method: 'POST',
                     body: formData
                 });
             })
             .then(response => {
+                if (!response) return null;
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             })
             .then(data => {
-                if (data.links && data.links.length > 0) {
-                    const startPos = textarea.selectionStart;
-                    const hasTextBefore = textarea.value.substring(0, startPos).trim().length > 0;
-    
-                    let bbcodeInsert = hasTextBefore ? '\r\n\r\n' : '';
-                    data.links.forEach((link, index) => {
-                        bbcodeInsert += `[img]${link}[/img]`;
-                        if (index < data.links.length - 1) {
-                            bbcodeInsert += '\r\n\r\n';
-                        }
-                    });
-                    bbcodeInsert += '\r\n\r\n';
-    
-                    insertAtCursor(textarea, bbcodeInsert);
-                }
+                if (!data || !data.links || data.links.length === 0) return;
+
+                const startPos = textarea.selectionStart;
+                const hasTextBefore = textarea.value.substring(0, startPos).trim().length > 0;
+
+                let bbcodeInsert = hasTextBefore ? '\r\n\r\n' : '';
+                data.links.forEach((link, index) => {
+                    bbcodeInsert += `[img]${link}[/img]`;
+                    if (index < data.links.length - 1) {
+                        bbcodeInsert += '\r\n\r\n';
+                    }
+                });
+                bbcodeInsert += '\r\n\r\n';
+
+                insertAtCursor(textarea, bbcodeInsert);
             })
             .catch(error => {
                 console.error('ImgHost upload error:', error.message);
@@ -202,3 +213,4 @@
     const observer = new MutationObserver(() => autoScanAndInject());
     observer.observe(document.body, { childList: true, subtree: true });
 })();
+

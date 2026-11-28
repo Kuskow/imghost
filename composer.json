@@ -3,8 +3,8 @@
     "type": "phpbb-extension",
     "description": "Fast client-side image compression and direct upload to an external image hoster with HMAC triangle verification.",
     "homepage": "https://github.com/Kuskow/imghost",
-    "version": "1.0.0",
-    "time": "2026-11-26",
+    "version": "1.0.1",
+    "time": "2026-11-28",
     "license": "GPL-2.0-only",
     "authors": [
         {
